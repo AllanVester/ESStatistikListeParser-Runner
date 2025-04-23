@@ -383,6 +383,8 @@ jobs:
           go run ${{ github.workspace }}/MySQL-GitHub.go
 
           rm -f "${{ github.workspace }}/${{ inputs.filename }}"
+        env:
+          NUMBER_OF_WORKERS: 32  
 
       - name: Dump the entire database
         run: |
@@ -408,4 +410,4 @@ jobs:
           pip install pymongo discord-webhook
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mysql
         env:
-          FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"  
+          FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"
