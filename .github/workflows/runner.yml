@@ -20,6 +20,9 @@ jobs:
   download-esstatistiklistemodtag-zip-file:
     name: Download Latest ESStatistikListeModtag ZIP-File
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/temp/
     steps:
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
@@ -31,7 +34,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser"
+          repository: "AllanVester/ESStatistikListeParser-GitHub"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
               /ESStatistikListeModtag-GitHub.py
@@ -79,7 +82,6 @@ jobs:
 
       - name: Download ESStatistikListeModtag ZIP-file
         run: |
-          ls -lh
           mv ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
           mkdir ${{ github.workspace }}/temp/ESStatistikListeModtag/
           
@@ -104,10 +106,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser"
+          repository: "AllanVester/ESStatistikListeParser-GitHub"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
-            /checkTotalAmountOfRows-GitHub.go
+            /go.mod
+            /go.sum
+            /CheckRows-GitHub.go
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
@@ -137,9 +141,9 @@ jobs:
         run: |
           go mod tidy
 
-      - name: Run Go script
+      - name: Run Check-Rows Go script
         run: |
-          go run ${{ github.workspace }}/checkTotalAmountOfRows-GitHub.go
+          go run ${{ github.workspace }}/CheckRows-GitHub.go
 
   upload-zip-to-discord:
     name: Upload Latest ESStatistikListeModtag File to Discord
@@ -156,7 +160,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser"
+          repository: "AllanVester/ESStatistikListeParser-GitHub"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
             /UploadToDiscord-GitHub.py
@@ -179,7 +183,17 @@ jobs:
           file "${{ github.workspace }}/${{ inputs.filename }}"
           
           rm -rf ${{ github.workspace }}/temp/
-          
+
+      - name: Archive ZIP file
+        run: |
+          mkdir -p ${{ github.workspace }}/zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/zip/${{ inputs.filename }} ${{ github.workspace }}/${{ inputs.filename }}
+
+      - name: Split ZIP file
+        run: |
+          mkdir -p ${{ github.workspace }}/split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/${{ inputs.filename }} ${{ github.workspace }}/split/${{ inputs.filename }}.part
+
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -187,9 +201,6 @@ jobs:
 
       - name: Upload ZIP file to Discord
         run: |
-          mkdir -p ${{ github.workspace }}/zip
-          mkdir -p ${{ github.workspace }}/split
-          
           pip install pymongo discord-webhook
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py normal
         env:
@@ -215,10 +226,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser"
+          repository: "AllanVester/ESStatistikListeParser-GitHub"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
-            /mongodb.go
+            /go.mod
+            /go.sum
+            /MongoDB-GitHub.go
             /UploadToDiscord-GitHub.py
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
@@ -261,9 +274,10 @@ jobs:
         run: |
           go mod tidy
 
-      - name: Run mongodb.go
+      - name: Run MongoDB Go script
         run: |
-          go run ${{ github.workspace }}/mongodb.go
+          go run ${{ github.workspace }}/MongoDB-GitHub.go
+          
           rm -f "${{ github.workspace }}/${{ inputs.filename }}"
 
       - name: Dump the entire database
@@ -290,7 +304,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Upload ZIP file to Discord
+      - name: Upload BSON file to Discord
         run: |
           pip install pymongo discord-webhook
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mongodb
@@ -316,11 +330,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser"
+          repository: "AllanVester/ESStatistikListeParser-GitHub"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
-            /bilgaden_new_new_structure.sql
-            /sql_worker.go
+            /Bilgaden.sql
+            /go.mod
+            /go.sum
+            /MySQL-GitHub.go
             /UploadToDiscord-GitHub.py
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
@@ -335,14 +351,14 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
-      - name: Set up MariaDB
+      - name: Set up MySQL
         uses: ankane/setup-mariadb@v1
         
-      - name: Import schema into MariaDB
+      - name: Import schema into MySQL
         run: |
-          /usr/bin/mariadb < "bilgaden_new_new_structure.sql"
+          /usr/bin/mariadb < "Bilgaden.sql"
 
-      - name: Tune MariaDB for bulk loading (New)
+      - name: Tune MySQL buffer pool size
         run: |
           /usr/bin/mariadb -e "SET GLOBAL innodb_buffer_pool_size = 14 * 1024 * 1024 * 1024;"
 
@@ -362,9 +378,9 @@ jobs:
         run: |
           go mod tidy
 
-      - name: Run sql_worker.go
+      - name: Run MySQL Go script
         run: |
-          go run ${{ github.workspace }}/sql_worker.go
+          go run ${{ github.workspace }}/MySQL-GitHub.go
 
           rm -f "${{ github.workspace }}/${{ inputs.filename }}"
 
@@ -387,7 +403,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Upload ZIP file to Discord
+      - name: Upload SQL file to Discord
         run: |
           pip install pymongo discord-webhook
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mysql
