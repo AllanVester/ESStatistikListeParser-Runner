@@ -34,7 +34,7 @@ jobs:
           repository: "AllanVester/ESStatistikListeParser"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
-              /ESStatistikListeModtag.py
+              /ESStatistikListeModtag-GitHub.py
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
@@ -83,7 +83,7 @@ jobs:
           mkdir ${{ github.workspace }}/temp/ESStatistikListeModtag/
           
           pip install pymongo discord-webhook
-          python ${{ github.workspace }}/ESStatistikListeModtag.py
+          python ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py
         env:
           FILENAME: "${{ inputs.filename }}"
           FILEPATH: "${{ github.workspace }}/temp/"
