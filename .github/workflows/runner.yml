@@ -297,6 +297,8 @@ jobs:
           FILENAME: "${{ inputs.filename-no-suffix }}.bson.gz"
 
   mysql:
+    name: Run MySQL
+    needs: check-rows
     runs-on: ubuntu-latest
     steps:
       - name: Maximize build space
