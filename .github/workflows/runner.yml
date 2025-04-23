@@ -1,0 +1,392 @@
+name: Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      filename:
+        description: 'ESStatistikListeModtag Filename'
+        required: true
+        type: string
+      filename-no-suffix:
+        description: 'ESStatistikListeModtag Filename (No Suffix)'
+        required: true
+        type: string
+      discord-upload-limit:
+        description: 'Discord Upload Limit'
+        required: true
+        type: string
+
+jobs:
+  download-esstatistiklistemodtag-zip-file:
+    name: Download Latest ESStatistikListeModtag ZIP-File
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-swapfile: "true"
+          
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeParser"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+              /ESStatistikListeModtag.py
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Checkout ESStatistikListeModtag repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeModtag"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            !/*
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up Git
+        run: |
+          gh auth login --with-token <<< "${{ secrets.PAT }}"
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 104857600
+          
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename }}; then
+              echo "Branch already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename }}; then
+                  git branch -D ${{ inputs.filename }}
+              fi
+              git push origin --delete ${{ inputs.filename }}
+              git checkout -b ${{ inputs.filename }}
+          else
+              echo "Branch does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename }}
+          fi
+
+          git push -u origin ${{ inputs.filename }}
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Download ESStatistikListeModtag ZIP-file
+        run: |
+          mv ${{ github.workspace }}/ESStatistikListeModtag.py ${{ github.workspace }}/temp/ESStatistikListeModtag.py
+          mkdir ${{ github.workspace }}/temp/ESStatistikListeModtag/
+          
+          pip install pymongo discord-webhook
+          python ${{ github.workspace }}/ESStatistikListeModtag.py
+        env:
+          FILENAME: "${{ inputs.filename }}"
+          FILEPATH: "${{ github.workspace }}/temp/"
+
+  check-rows:
+    name: Go Row Check
+    needs: download-esstatistiklistemodtag-zip-file
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-swapfile: "true"
+          
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeParser"
+          path: "${{ github.workspace }}/"
+          sparse-checkout: |
+            /checkTotalAmountOfRows-GitHub.go
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Checkout ESStatistikListeModtag repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeModtag"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Stitch files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
+          file "${{ github.workspace }}/${{ inputs.filename }}"
+          
+          rm -rf ${{ github.workspace }}/temp/
+          
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+
+      - name: Install Go dependencies
+        run: |
+          go mod tidy
+
+      - name: Run Go script
+        run: |
+          go run ${{ github.workspace }}/checkTotalAmountOfRows-GitHub.go
+
+  upload-zip-to-discord:
+    name: Upload Latest ESStatistikListeModtag File to Discord
+    needs: download-esstatistiklistemodtag-zip-file
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-swapfile: "true"
+          
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeParser"
+          path: "${{ github.workspace }}/"
+          sparse-checkout: |
+            /UploadToDiscord-GitHub.py
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Checkout ESStatistikListeModtag repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeModtag"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Stitch files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
+          file "${{ github.workspace }}/${{ inputs.filename }}"
+          
+          rm -rf ${{ github.workspace }}/temp/
+          
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Upload ZIP file to Discord
+        run: |
+          mkdir -p ${{ github.workspace }}/zip
+          mkdir -p ${{ github.workspace }}/split
+          
+          pip install pymongo discord-webhook
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py normal
+        env:
+          FILENAME: "${{ inputs.filename }}"
+
+  mongodb:
+    name: Run MongoDB
+    needs: check-rows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          remove-large-packages: "true"
+          remove-cached-tools: "true"
+          remove-swapfile: "true"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeParser"
+          path: "${{ github.workspace }}/"
+          sparse-checkout: |
+            /mongodb.go
+            /UploadToDiscord-GitHub.py
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Checkout ESStatistikListeModtag repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeModtag"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Install MongoDB
+        uses: ankane/setup-mongodb@v1
+        with:
+          mongodb-version: 8.0
+
+      - name: Create MongoDB database
+        run: |
+          mongosh --host localhost:27017 <<EOF
+            db = db.getSiblingDB('bilgaden');
+            db.createCollection('dmr');
+          EOF
+
+      - name: Stitch files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
+          file "${{ github.workspace }}/${{ inputs.filename }}"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+
+      - name: Install Go dependencies
+        run: |
+          go mod tidy
+
+      - name: Run mongodb.go
+        run: |
+          go run ${{ github.workspace }}/mongodb.go
+          rm -f "${{ github.workspace }}/${{ inputs.filename }}"
+
+      - name: Dump the entire database
+        run: |
+          mongodump \
+            --host localhost --port 27017 \
+            --db bilgaden \
+            --collection=dmr \
+            --gzip --out dump
+          find ${{ github.workspace }}/dump/bilgaden -type f ! -name 'dmr.bson.gz' -delete
+    
+      - name: Archive BSON file
+        run: |
+          mkdir -p ${{ github.workspace }}/mongodb-zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mongodb-zip/${{ inputs.filename-no-suffix }}.bson.gz.zip ${{ github.workspace }}/dump/bilgaden
+
+      - name: Split BSON file
+        run: |
+          mkdir -p ${{ github.workspace }}/mongodb-split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/dump/bilgaden/dmr.bson.gz ${{ github.workspace }}/mongodb-split/${{ inputs.filename-no-suffix }}.bson.gz.part
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Upload ZIP file to Discord
+        run: |
+          pip install pymongo discord-webhook
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py mongodb
+        env:
+          FILENAME: "${{ inputs.filename-no-suffix }}.bson.gz"
+
+  mysql:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          remove-cached-tools: "true"
+          remove-swapfile: "true"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeParser"
+          path: "${{ github.workspace }}/"
+          sparse-checkout: |
+            /bilgaden_new_new_structure.sql
+            /sql_worker.go
+            /UploadToDiscord-GitHub.py
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Checkout ESStatistikListeModtag repository
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeModtag"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up MariaDB
+        uses: ankane/setup-mariadb@v1
+        
+      - name: Import schema into MariaDB
+        run: |
+          /usr/bin/mariadb < "bilgaden_new_new_structure.sql"
+
+      - name: Tune MariaDB for bulk loading (New)
+        run: |
+          /usr/bin/mariadb -e "SET GLOBAL innodb_buffer_pool_size = 14 * 1024 * 1024 * 1024;"
+
+      - name: Stitch files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
+          file "${{ github.workspace }}/${{ inputs.filename }}"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+
+      - name: Install Go dependencies
+        run: |
+          go mod tidy
+
+      - name: Run sql_worker.go
+        run: |
+          go run ${{ github.workspace }}/sql_worker.go
+
+          rm -f "${{ github.workspace }}/${{ inputs.filename }}"
+
+      - name: Dump the entire database
+        run: |
+          /usr/bin/mariadb-dump --databases bilgaden_new_new | gzip > ${{ github.workspace }}/bilgaden_new_new.sql.gz
+    
+      - name: Archive SQL file
+        run: |
+          mkdir -p ${{ github.workspace }}/mysql-zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mysql-zip/${{ inputs.filename-no-suffix }}.sql.gz.zip ${{ github.workspace }}/bilgaden_new_new.sql.gz
+
+      - name: Split SQL file
+        run: |
+          mkdir -p ${{ github.workspace }}/mysql-split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/bilgaden_new_new.sql.gz ${{ github.workspace }}/mysql-split/${{ inputs.filename-no-suffix }}.sql.gz.part
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Upload ZIP file to Discord
+        run: |
+          pip install pymongo discord-webhook
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py mysql
+        env:
+          FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"  
