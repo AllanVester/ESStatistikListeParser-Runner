@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeParser"
-          path: "${{ github.workspace }}/temp/"
+          path: "${{ github.workspace }}/"
           sparse-checkout: |
               /ESStatistikListeModtag-GitHub.py
           sparse-checkout-cone-mode: false
