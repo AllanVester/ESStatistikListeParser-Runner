@@ -79,6 +79,7 @@ jobs:
 
       - name: Download ESStatistikListeModtag ZIP-file
         run: |
+          ls -lh
           mv ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
           mkdir ${{ github.workspace }}/temp/ESStatistikListeModtag/
           
