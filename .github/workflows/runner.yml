@@ -84,7 +84,7 @@ jobs:
           mkdir ${{ github.workspace }}/temp/ESStatistikListeModtag/
           
           pip install pymongo discord-webhook
-          python ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py
+          python ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
         env:
           FILENAME: "${{ inputs.filename }}"
           FILEPATH: "${{ github.workspace }}/temp/"
