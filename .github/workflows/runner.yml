@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       discord-upload-limit:
-        description: 'Discord Upload Limit'
+        description: 'Discord Upload Limit (In MiB)'
         required: true
         type: string
 
