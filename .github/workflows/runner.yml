@@ -388,17 +388,17 @@ jobs:
 
       - name: Dump the entire database
         run: |
-          /usr/bin/mariadb-dump --databases bilgaden_new_new | gzip > ${{ github.workspace }}/bilgaden_new_new.sql.gz
+          /usr/bin/mariadb-dump --databases bilgaden | gzip > ${{ github.workspace }}/bilgaden.sql.gz
     
       - name: Archive SQL file
         run: |
           mkdir -p ${{ github.workspace }}/mysql-zip
-          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mysql-zip/${{ inputs.filename-no-suffix }}.sql.gz.zip ${{ github.workspace }}/bilgaden_new_new.sql.gz
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mysql-zip/${{ inputs.filename-no-suffix }}.sql.gz.zip ${{ github.workspace }}/bilgaden.sql.gz
 
       - name: Split SQL file
         run: |
           mkdir -p ${{ github.workspace }}/mysql-split
-          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/bilgaden_new_new.sql.gz ${{ github.workspace }}/mysql-split/${{ inputs.filename-no-suffix }}.sql.gz.part
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/mysql-split/${{ inputs.filename-no-suffix }}.sql.gz.part
 
       - name: Install Python
         uses: actions/setup-python@v5
