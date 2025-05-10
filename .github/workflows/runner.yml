@@ -84,12 +84,15 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install Python dependencies
+        run: |
+          pip install pymongo discord-webhook
+
       - name: Download ESStatistikListeModtag ZIP-file
         run: |
           mv ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
           mkdir ${{ github.workspace }}/temp/ESStatistikListeModtag/
           
-          pip install pymongo discord-webhook
           python ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
         env:
           FILENAME: "${{ inputs.filename }}"
@@ -203,9 +206,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Upload ZIP file to Discord
+      - name: Install Python dependencies
         run: |
           pip install pymongo discord-webhook
+
+      - name: Upload ZIP file to Discord
+        run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py normal
         env:
           FILENAME: "${{ inputs.filename }}"
@@ -332,9 +338,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Upload BSON file to Discord
+      - name: Install Python dependencies
         run: |
           pip install pymongo discord-webhook
+
+      - name: Upload BSON file to Discord
+        run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mongodb
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.bson.gz"
@@ -457,9 +466,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Upload SQL file to Discord
+      - name: Install Python dependencies
         run: |
           pip install pymongo discord-webhook
+
+      - name: Upload SQL file to Discord
+        run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mysql
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"
