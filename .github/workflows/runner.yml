@@ -374,11 +374,12 @@ jobs:
 
       - name: Upload BSON file to GitHub MongoDB-branch
         run: |
+          mv ${{ github.workspace }}/dump/bilgaden/dmr.bson.gz ${{ github.workspace }}/temp/dmr.bson.gz
           mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
           
           python ${{ github.workspace }}/temp/Branch-GitHub.py mongodb
         env:
-          FILENAME: "${{ github.workspace }}/dump/bilgaden/dmr.bson.gz"
+          FILENAME: "dmr.bson.gz"
           FILEPATH: "${{ github.workspace }}/temp/"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
@@ -526,11 +527,12 @@ jobs:
 
       - name: Upload SQL file to GitHub MySQL-branch
         run: |
+          mv ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/bilgaden.sql.gz
           mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
           
           python ${{ github.workspace }}/temp/Branch-GitHub.py mysql
         env:
-          FILENAME: "${{ github.workspace }}/bilgaden.sql.gz"
+          FILENAME: "bilgaden.sql.gz"
           FILEPATH: "${{ github.workspace }}/temp/"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
