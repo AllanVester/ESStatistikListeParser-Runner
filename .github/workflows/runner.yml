@@ -246,6 +246,30 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
+      - name: Set up Git
+        run: |
+          gh auth login --with-token <<< "${{ secrets.PAT }}"
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 104857600
+          
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename }}-mongodb; then
+              echo "Branch already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename }}-mongodb; then
+                  git branch -D ${{ inputs.filename }}-mongodb
+              fi
+              git push origin --delete ${{ inputs.filename }}-mongodb
+              git checkout -b ${{ inputs.filename }}-mongodb
+          else
+              echo "Branch does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename }}-mongodb
+          fi
+
+          git push -u origin ${{ inputs.filename }}-mongodb
+
       - name: Install MongoDB
         uses: ankane/setup-mongodb@v1
         with:
@@ -350,6 +374,30 @@ jobs:
             /ESStatistikListeModtag
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
+
+      - name: Set up Git
+        run: |
+          gh auth login --with-token <<< "${{ secrets.PAT }}"
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 104857600
+          
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename }}-mysql; then
+              echo "Branch already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename }}-mysql; then
+                  git branch -D ${{ inputs.filename }}-mysql
+              fi
+              git push origin --delete ${{ inputs.filename }}-mysql
+              git checkout -b ${{ inputs.filename }}-mysql
+          else
+              echo "Branch does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename }}-mysql
+          fi
+
+          git push -u origin ${{ inputs.filename }}-mysql
 
       - name: Set up MySQL
         uses: ankane/setup-mariadb@v1
