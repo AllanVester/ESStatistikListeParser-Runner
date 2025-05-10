@@ -39,6 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeParser-GitHub"
+          ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
               /ESStatistikListeModtag-GitHub.py
@@ -49,6 +50,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeModtag"
+          ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
             !/*
@@ -56,6 +58,7 @@ jobs:
           token: "${{ secrets.PAT }}"
 
       - name: Set up Git
+        working-directory: "${{ github.workspace }}/temp/"
         run: |
           gh auth login --with-token <<< "${{ secrets.PAT }}"
 
@@ -91,12 +94,21 @@ jobs:
       - name: Download ESStatistikListeModtag ZIP-file
         run: |
           mv ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
-          mkdir ${{ github.workspace }}/temp/ESStatistikListeModtag/
           
           python ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
         env:
           FILENAME: "${{ inputs.filename }}"
           FILEPATH: "${{ github.workspace }}/temp/"
+
+      - name: Upload ESStatistikListeModtag ZIP-file to GitHub main-branch
+        run: |
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py main
+        env:
+          FILENAME: "${{ inputs.filename }}"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
   check-rows:
     name: Go Row Check
@@ -114,6 +126,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeParser-GitHub"
+          ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
             /go.mod
@@ -126,6 +139,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeModtag"
+          ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
             /ESStatistikListeModtag
@@ -168,6 +182,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeParser-GitHub"
+          ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
             /UploadToDiscord-GitHub.py
@@ -178,6 +193,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeModtag"
+          ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
             /ESStatistikListeModtag
@@ -237,6 +253,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeParser-GitHub"
+          ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
             /go.mod
@@ -250,13 +267,45 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeModtag"
+          ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
             /ESStatistikListeModtag
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
+      - name: Install MongoDB
+        uses: ankane/setup-mongodb@v1
+        with:
+          mongodb-version: 8.0
+
+      - name: Create MongoDB database
+        run: |
+          mongosh --host localhost:27017 <<EOF
+            db = db.getSiblingDB('bilgaden');
+            db.createCollection('dmr');
+          EOF
+
+      - name: Stitch files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
+          file "${{ github.workspace }}/${{ inputs.filename }}"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (MongoDB-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeModtag"
+          ref: "mongodb"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            !/*
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
       - name: Set up Git
+        working-directory: "${{ github.workspace }}/temp/"
         run: |
           gh auth login --with-token <<< "${{ secrets.PAT }}"
 
@@ -279,25 +328,6 @@ jobs:
           fi
 
           git push -u origin ${{ inputs.filename }}-mongodb
-
-      - name: Install MongoDB
-        uses: ankane/setup-mongodb@v1
-        with:
-          mongodb-version: 8.0
-
-      - name: Create MongoDB database
-        run: |
-          mongosh --host localhost:27017 <<EOF
-            db = db.getSiblingDB('bilgaden');
-            db.createCollection('dmr');
-          EOF
-
-      - name: Stitch files back together
-        run: |
-          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
-          file "${{ github.workspace }}/${{ inputs.filename }}"
-          
-          rm -rf ${{ github.workspace }}/temp/
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -342,6 +372,16 @@ jobs:
         run: |
           pip install pymongo discord-webhook
 
+      - name: Upload BSON file to GitHub MongoDB-branch
+        run: |
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py mongodb
+        env:
+          FILENAME: "${{ github.workspace }}/dump/bilgaden/dmr.bson.gz"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+
       - name: Upload BSON file to Discord
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mongodb
@@ -368,6 +408,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeParser-GitHub"
+          ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
             /Bilgaden.sql
@@ -382,13 +423,44 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "AllanVester/ESStatistikListeModtag"
+          ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
             /ESStatistikListeModtag
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
+      - name: Set up MySQL
+        uses: ankane/setup-mariadb@v1
+        
+      - name: Import schema into MySQL
+        run: |
+          /usr/bin/mariadb < "Bilgaden.sql"
+
+      - name: Tune MySQL buffer pool size
+        run: |
+          /usr/bin/mariadb -e "SET GLOBAL innodb_buffer_pool_size = 14 * 1024 * 1024 * 1024;"
+
+      - name: Stitch files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
+          file "${{ github.workspace }}/${{ inputs.filename }}"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (MySQL-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "AllanVester/ESStatistikListeModtag"
+          ref: "mysql"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            !/*
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
       - name: Set up Git
+        working-directory: "${{ github.workspace }}/temp/"
         run: |
           gh auth login --with-token <<< "${{ secrets.PAT }}"
 
@@ -411,24 +483,6 @@ jobs:
           fi
 
           git push -u origin ${{ inputs.filename }}-mysql
-
-      - name: Set up MySQL
-        uses: ankane/setup-mariadb@v1
-        
-      - name: Import schema into MySQL
-        run: |
-          /usr/bin/mariadb < "Bilgaden.sql"
-
-      - name: Tune MySQL buffer pool size
-        run: |
-          /usr/bin/mariadb -e "SET GLOBAL innodb_buffer_pool_size = 14 * 1024 * 1024 * 1024;"
-
-      - name: Stitch files back together
-        run: |
-          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
-          file "${{ github.workspace }}/${{ inputs.filename }}"
-          
-          rm -rf ${{ github.workspace }}/temp/
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -469,6 +523,16 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install pymongo discord-webhook
+
+      - name: Upload SQL file to GitHub MySQL-branch
+        run: |
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py mysql
+        env:
+          FILENAME: "${{ github.workspace }}/bilgaden.sql.gz"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
       - name: Upload SQL file to Discord
         run: |
