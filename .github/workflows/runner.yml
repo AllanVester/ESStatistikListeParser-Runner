@@ -15,6 +15,10 @@ on:
         description: 'Discord Upload Limit (In MiB)'
         required: true
         type: string
+      github-upload-limit:
+        description: 'GitHub Upload Limit (In MiB)'
+        required: true
+        type: string
 
 jobs:
   download-esstatistiklistemodtag-zip-file:
