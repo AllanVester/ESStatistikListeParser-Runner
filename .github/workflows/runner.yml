@@ -110,6 +110,7 @@ jobs:
         env:
           FILENAME: "${{ inputs.filename }}"
           FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename }}"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
   check-rows:
@@ -385,6 +386,7 @@ jobs:
         env:
           FILENAME: "dmr.bson.gz"
           FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename }}-mongodb"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
       - name: Upload BSON file to Discord
@@ -540,6 +542,7 @@ jobs:
         env:
           FILENAME: "bilgaden.sql.gz"
           FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename }}-mysql"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
       - name: Upload SQL file to Discord
