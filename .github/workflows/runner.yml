@@ -42,7 +42,8 @@ jobs:
           ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
-              /ESStatistikListeModtag-GitHub.py
+            /Branch-GitHub.py
+            /ESStatistikListeModtag-GitHub.py
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
@@ -257,6 +258,7 @@ jobs:
           ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
+            /Branch-GitHub.py
             /go.mod
             /go.sum
             /MongoDB-GitHub.go
@@ -415,6 +417,7 @@ jobs:
           path: "${{ github.workspace }}/"
           sparse-checkout: |
             /Bilgaden.sql
+            /Branch-GitHub.py
             /go.mod
             /go.sum
             /MySQL-GitHub.go
