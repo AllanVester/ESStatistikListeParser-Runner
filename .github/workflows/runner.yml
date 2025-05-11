@@ -101,6 +101,7 @@ jobs:
           FILEPATH: "${{ github.workspace }}/temp/"
 
       - name: Upload ESStatistikListeModtag ZIP-file to GitHub main-branch
+        working-directory: "${{ github.workspace }}/temp/"
         run: |
           mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
           
@@ -373,6 +374,7 @@ jobs:
           pip install pymongo discord-webhook
 
       - name: Upload BSON file to GitHub MongoDB-branch
+        working-directory: "${{ github.workspace }}/temp/"
         run: |
           mv ${{ github.workspace }}/dump/bilgaden/dmr.bson.gz ${{ github.workspace }}/temp/dmr.bson.gz
           mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
@@ -526,6 +528,7 @@ jobs:
           pip install pymongo discord-webhook
 
       - name: Upload SQL file to GitHub MySQL-branch
+        working-directory: "${{ github.workspace }}/temp/"
         run: |
           mv ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/bilgaden.sql.gz
           mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
