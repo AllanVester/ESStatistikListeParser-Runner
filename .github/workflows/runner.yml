@@ -3,10 +3,10 @@ name: Runner
 on:
   workflow_dispatch:
     inputs:
-      filename:
-        description: 'ESStatistikListeModtag Filename'
-        required: true
-        type: string
+      # filename:
+      #   description: 'ESStatistikListeModtag Filename'
+      #   required: true
+      #   type: string
       filename-no-suffix:
         description: 'ESStatistikListeModtag Filename (No Suffix)'
         required: true
