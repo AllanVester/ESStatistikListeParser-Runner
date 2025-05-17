@@ -67,21 +67,21 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
           
-          if git ls-remote --exit-code --heads origin ${{ inputs.filename }}; then
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip; then
               echo "Branch already exists, deleting and recreating..."
               
-              if git show-ref --verify --quiet refs/heads/${{ inputs.filename }}; then
-                  git branch -D ${{ inputs.filename }}
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip
               fi
-              git push origin --delete ${{ inputs.filename }}
-              git checkout -b ${{ inputs.filename }}
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip
           else
               echo "Branch does not exist, creating..."
               
-              git checkout -b ${{ inputs.filename }}
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip
           fi
 
-          git push -u origin ${{ inputs.filename }}
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -98,7 +98,7 @@ jobs:
           
           python ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
         env:
-          FILENAME: "${{ inputs.filename }}"
+          FILENAME: "${{ inputs.filename-no-suffix }}.zip"
           FILEPATH: "${{ github.workspace }}/temp/"
 
       - name: Upload ESStatistikListeModtag ZIP-file to GitHub main-branch
@@ -108,9 +108,9 @@ jobs:
           
           python ${{ github.workspace }}/temp/Branch-GitHub.py main
         env:
-          FILENAME: "${{ inputs.filename }}"
+          FILENAME: "${{ inputs.filename-no-suffix }}.zip"
           FILEPATH: "${{ github.workspace }}/temp/"
-          BRANCHNAME: "${{ inputs.filename }}"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
   check-rows:
@@ -151,8 +151,8 @@ jobs:
 
       - name: Stitch files back together
         run: |
-          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
-          file "${{ github.workspace }}/${{ inputs.filename }}"
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           
           rm -rf ${{ github.workspace }}/temp/
           
@@ -205,20 +205,20 @@ jobs:
 
       - name: Stitch files back together
         run: |
-          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
-          file "${{ github.workspace }}/${{ inputs.filename }}"
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           
           rm -rf ${{ github.workspace }}/temp/
 
       - name: Archive ZIP file
         run: |
           mkdir -p ${{ github.workspace }}/zip
-          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/zip/${{ inputs.filename }} ${{ github.workspace }}/${{ inputs.filename }}
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/zip/${{ inputs.filename-no-suffix }}.zip ${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip
 
       - name: Split ZIP file
         run: |
           mkdir -p ${{ github.workspace }}/split
-          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/${{ inputs.filename }} ${{ github.workspace }}/split/${{ inputs.filename }}.part
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip ${{ github.workspace }}/split/${{ inputs.filename-no-suffix }}.zip.part
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -233,7 +233,7 @@ jobs:
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py normal
         env:
-          FILENAME: "${{ inputs.filename }}"
+          FILENAME: "${{ inputs.filename-no-suffix }}.zip"
 
   mongodb:
     name: Run MongoDB
@@ -292,8 +292,8 @@ jobs:
 
       - name: Stitch files back together
         run: |
-          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
-          file "${{ github.workspace }}/${{ inputs.filename }}"
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           
           rm -rf ${{ github.workspace }}/temp/
 
@@ -317,21 +317,21 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
           
-          if git ls-remote --exit-code --heads origin ${{ inputs.filename }}-mongodb; then
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-mongodb; then
               echo "Branch already exists, deleting and recreating..."
               
-              if git show-ref --verify --quiet refs/heads/${{ inputs.filename }}-mongodb; then
-                  git branch -D ${{ inputs.filename }}-mongodb
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-mongodb; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-mongodb
               fi
-              git push origin --delete ${{ inputs.filename }}-mongodb
-              git checkout -b ${{ inputs.filename }}-mongodb
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-mongodb
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mongodb
           else
               echo "Branch does not exist, creating..."
               
-              git checkout -b ${{ inputs.filename }}-mongodb
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mongodb
           fi
 
-          git push -u origin ${{ inputs.filename }}-mongodb
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-mongodb
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -346,7 +346,7 @@ jobs:
         run: |
           go run ${{ github.workspace }}/MongoDB-GitHub.go
           
-          rm -f "${{ github.workspace }}/${{ inputs.filename }}"
+          rm -f "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
 
       - name: Dump the entire database
         run: |
@@ -386,7 +386,7 @@ jobs:
         env:
           FILENAME: "dmr.bson.gz"
           FILEPATH: "${{ github.workspace }}/temp/"
-          BRANCHNAME: "${{ inputs.filename }}-mongodb"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mongodb"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
       - name: Upload BSON file to Discord
@@ -451,8 +451,8 @@ jobs:
 
       - name: Stitch files back together
         run: |
-          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename }}"
-          file "${{ github.workspace }}/${{ inputs.filename }}"
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           
           rm -rf ${{ github.workspace }}/temp/
 
@@ -476,21 +476,21 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
           
-          if git ls-remote --exit-code --heads origin ${{ inputs.filename }}-mysql; then
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-mysql; then
               echo "Branch already exists, deleting and recreating..."
               
-              if git show-ref --verify --quiet refs/heads/${{ inputs.filename }}-mysql; then
-                  git branch -D ${{ inputs.filename }}-mysql
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-mysql; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-mysql
               fi
-              git push origin --delete ${{ inputs.filename }}-mysql
-              git checkout -b ${{ inputs.filename }}-mysql
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-mysql
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql
           else
               echo "Branch does not exist, creating..."
               
-              git checkout -b ${{ inputs.filename }}-mysql
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql
           fi
 
-          git push -u origin ${{ inputs.filename }}-mysql
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-mysql
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -505,7 +505,7 @@ jobs:
         run: |
           go run ${{ github.workspace }}/MySQL-GitHub.go
 
-          rm -f "${{ github.workspace }}/${{ inputs.filename }}"
+          rm -f "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
         env:
           NUMBER_OF_WORKERS: 32  
 
@@ -542,7 +542,7 @@ jobs:
         env:
           FILENAME: "bilgaden.sql.gz"
           FILEPATH: "${{ github.workspace }}/temp/"
-          BRANCHNAME: "${{ inputs.filename }}-mysql"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mysql"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
       - name: Upload SQL file to Discord
