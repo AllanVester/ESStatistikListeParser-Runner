@@ -3,10 +3,10 @@ name: Runner
 on:
   workflow_dispatch:
     inputs:
-      # filename:
-      #   description: 'ESStatistikListeModtag Filename'
-      #   required: true
-      #   type: string
+      filename:
+        description: 'ESStatistikListeModtag Filename'
+        required: true
+        type: string
       filename-no-suffix:
         description: 'ESStatistikListeModtag Filename (No Suffix)'
         required: true
@@ -50,7 +50,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeModtag"
+          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -141,7 +141,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeModtag"
+          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -195,7 +195,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeModtag"
+          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -270,7 +270,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeModtag"
+          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -300,7 +300,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository (MongoDB-branch)
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeModtag"
+          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
           ref: "mongodb"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -430,7 +430,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeModtag"
+          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -459,7 +459,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository (MySQL-branch)
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeModtag"
+          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
           ref: "mysql"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
