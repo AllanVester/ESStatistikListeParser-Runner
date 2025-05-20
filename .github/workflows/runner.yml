@@ -109,6 +109,7 @@ jobs:
           python ${{ github.workspace }}/temp/Branch-GitHub.py main
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.zip"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
           FILEPATH: "${{ github.workspace }}/temp/"
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
@@ -408,6 +409,7 @@ jobs:
           python ${{ github.workspace }}/temp/Branch-GitHub.py mongodb
         env:
           FILENAME: "dmr.bson.gz"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
           FILEPATH: "${{ github.workspace }}/temp/"
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mongodb"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
@@ -564,6 +566,7 @@ jobs:
           python ${{ github.workspace }}/temp/Branch-GitHub.py mysql
         env:
           FILENAME: "bilgaden.sql.gz"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
           FILEPATH: "${{ github.workspace }}/temp/"
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mysql"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
