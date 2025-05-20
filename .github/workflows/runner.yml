@@ -113,7 +113,7 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Set up Git branches for later use
+      - name: Set up ESStatistikListeModtag repository branches for later use
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           git switch --orphan mongodb
