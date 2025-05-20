@@ -35,83 +35,83 @@ jobs:
           remove-codeql: "true"
           remove-swapfile: "true"
           
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: "AllanVester/ESStatistikListeParser-GitHub"
-          ref: "main"
-          path: "${{ github.workspace }}/"
-          sparse-checkout: |
-            /Branch-GitHub.py
-            /ESStatistikListeModtag-GitHub.py
-          sparse-checkout-cone-mode: false
-          token: "${{ secrets.PAT }}"
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: "AllanVester/ESStatistikListeParser-GitHub"
+      #     ref: "main"
+      #     path: "${{ github.workspace }}/"
+      #     sparse-checkout: |
+      #       /Branch-GitHub.py
+      #       /ESStatistikListeModtag-GitHub.py
+      #     sparse-checkout-cone-mode: false
+      #     token: "${{ secrets.PAT }}"
 
-      - name: Checkout ESStatistikListeModtag repository
-        uses: actions/checkout@v4
-        with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
-          ref: "main"
-          path: "${{ github.workspace }}/temp/"
-          sparse-checkout: |
-            !/*
-          sparse-checkout-cone-mode: false
-          token: "${{ secrets.PAT }}"
+      # - name: Checkout ESStatistikListeModtag repository
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+      #     ref: "main"
+      #     path: "${{ github.workspace }}/temp/"
+      #     sparse-checkout: |
+      #       !/*
+      #     sparse-checkout-cone-mode: false
+      #     token: "${{ secrets.PAT }}"
 
-      - name: Set up Git
-        working-directory: "${{ github.workspace }}/temp/"
-        run: |
-          gh auth login --with-token <<< "${{ secrets.PAT }}"
+      # - name: Set up Git
+      #   working-directory: "${{ github.workspace }}/temp/"
+      #   run: |
+      #     gh auth login --with-token <<< "${{ secrets.PAT }}"
 
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global http.postBuffer 104857600
+      #     git config --global user.name "github-actions[bot]"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      #     git config --global http.postBuffer 104857600
           
-          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip; then
-              echo "Branch already exists, deleting and recreating..."
+      #     if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip; then
+      #         echo "Branch already exists, deleting and recreating..."
               
-              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip; then
-                  git branch -D ${{ inputs.filename-no-suffix }}.zip
-              fi
-              git push origin --delete ${{ inputs.filename-no-suffix }}.zip
-              git checkout -b ${{ inputs.filename-no-suffix }}.zip
-          else
-              echo "Branch does not exist, creating..."
+      #         if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip; then
+      #             git branch -D ${{ inputs.filename-no-suffix }}.zip
+      #         fi
+      #         git push origin --delete ${{ inputs.filename-no-suffix }}.zip
+      #         git checkout -b ${{ inputs.filename-no-suffix }}.zip
+      #     else
+      #         echo "Branch does not exist, creating..."
               
-              git checkout -b ${{ inputs.filename-no-suffix }}.zip
-          fi
+      #         git checkout -b ${{ inputs.filename-no-suffix }}.zip
+      #     fi
 
-          git push -u origin ${{ inputs.filename-no-suffix }}.zip
+      #     git push -u origin ${{ inputs.filename-no-suffix }}.zip
 
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
+      # - name: Install Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.x'
 
-      - name: Install Python dependencies
-        run: |
-          pip install pymongo discord-webhook
+      # - name: Install Python dependencies
+      #   run: |
+      #     pip install pymongo discord-webhook
 
-      - name: Download ESStatistikListeModtag ZIP-file
-        run: |
-          mv ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
+      # - name: Download ESStatistikListeModtag ZIP-file
+      #   run: |
+      #     mv ${{ github.workspace }}/ESStatistikListeModtag-GitHub.py ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
           
-          python ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
-        env:
-          FILENAME: "${{ inputs.filename-no-suffix }}.zip"
-          FILEPATH: "${{ github.workspace }}/temp/"
+      #     python ${{ github.workspace }}/temp/ESStatistikListeModtag-GitHub.py
+      #   env:
+      #     FILENAME: "${{ inputs.filename-no-suffix }}.zip"
+      #     FILEPATH: "${{ github.workspace }}/temp/"
 
-      - name: Upload ESStatistikListeModtag ZIP-file to GitHub main-branch
-        working-directory: "${{ github.workspace }}/temp/"
-        run: |
-          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+      # - name: Upload ESStatistikListeModtag ZIP-file to GitHub main-branch
+      #   working-directory: "${{ github.workspace }}/temp/"
+      #   run: |
+      #     mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
           
-          python ${{ github.workspace }}/temp/Branch-GitHub.py main
-        env:
-          FILENAME: "${{ inputs.filename-no-suffix }}.zip"
-          FILEPATH: "${{ github.workspace }}/temp/"
-          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip"
-          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+      #     python ${{ github.workspace }}/temp/Branch-GitHub.py main
+      #   env:
+      #     FILENAME: "${{ inputs.filename-no-suffix }}.zip"
+      #     FILEPATH: "${{ github.workspace }}/temp/"
+      #     BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip"
+      #     GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
   check-rows:
     name: Go Row Check
