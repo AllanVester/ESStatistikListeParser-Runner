@@ -83,6 +83,29 @@ jobs:
 
           git push -u origin ${{ inputs.filename-no-suffix }}.zip
 
+      - name: Set up Git branches
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          git switch --orphan mongodb
+          git commit --allow-empty -m "Created MongoDB branch"
+          git push origin mongodb
+
+          git switch --orphan mysql
+          git commit --allow-empty -m "Created MySQL branch"
+          git push origin mysql
+
+          git switch --orphan kidvin
+          git commit --allow-empty -m "Created KidVin branch"
+          git push origin kidvin
+          
+          git switch --orphan kid
+          git commit --allow-empty -m "Created Kid branch"
+          git push origin kid
+
+          git switch --orphan vin
+          git commit --allow-empty -m "Created Vin branch"
+          git push origin vin
+
       - name: Install Python
         uses: actions/setup-python@v5
         with:
