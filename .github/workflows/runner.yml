@@ -38,7 +38,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser-GitHub"
+          repository: "${{ github.repository_owner }}/ESStatistikListeParser-GitHub"
           ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
@@ -47,10 +47,64 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
+      - name: Create ESStatistikListeModtag repository and set workflow permissions
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const repoName = `${{ inputs.filename-no-suffix }}`;
+
+            const payload = {
+              name: repoName,
+              private: true,
+              visibility: "private",
+              has_issues: false,
+              has_projects: false,
+              has_wiki: false,
+              has_discussions: false,
+              has_downloads: true,
+              is_template: false,
+              auto_init: true,
+              allow_squash_merge: true,
+              allow_merge_commit: false,
+              allow_rebase_merge: false,
+              allow_auto_merge: true,
+              delete_branch_on_merge: true,
+              use_squash_pr_title_as_default: true,
+              squash_merge_commit_title: "PR_TITLE",
+              squash_merge_commit_message: "BLANK"
+            };
+      
+            try {
+              const response = await github.rest.repos.createForAuthenticatedUser(payload);
+              core.info(`Created ${response.data.name}`);
+            } catch (err) {
+              if (err.status === 422 && err.message.includes('name already exists')) {
+                core.info(`Repository ${repoName} already exists, skipping creation.`);
+              } else {
+                throw err;
+              }
+            }
+
+            try {
+              await github.request(
+                'PUT /repos/{owner}/{repo}/actions/permissions/workflow',
+                {
+                  owner: context.repo.owner,
+                  repo: repoName,
+                  default_workflow_permissions: 'write',
+                  can_approve_pull_request_reviews: true
+                }
+              );
+              core.info(`Workflow permissions set for ${repoName}`);
+            } catch (err) {
+              throw err;
+            }
+          github-token: "${{ secrets.PAT }}"
+
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -152,7 +206,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser-GitHub"
+          repository: "${{ github.repository_owner }}/ESStatistikListeParser-GitHub"
           ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
@@ -165,7 +219,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -208,7 +262,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser-GitHub"
+          repository: "${{ github.repository_owner }}/ESStatistikListeParser-GitHub"
           ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
@@ -219,7 +273,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -279,7 +333,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser-GitHub"
+          repository: "${{ github.repository_owner }}/ESStatistikListeParser-GitHub"
           ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
@@ -294,7 +348,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -324,7 +378,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository (MongoDB-branch)
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
           ref: "mongodb"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -439,7 +493,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/ESStatistikListeParser-GitHub"
+          repository: "${{ github.repository_owner }}/ESStatistikListeParser-GitHub"
           ref: "main"
           path: "${{ github.workspace }}/"
           sparse-checkout: |
@@ -455,7 +509,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
           ref: "main"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
@@ -484,7 +538,7 @@ jobs:
       - name: Checkout ESStatistikListeModtag repository (MySQL-branch)
         uses: actions/checkout@v4
         with:
-          repository: "AllanVester/${{ inputs.filename-no-suffix }}"
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
           ref: "mysql"
           path: "${{ github.workspace }}/temp/"
           sparse-checkout: |
