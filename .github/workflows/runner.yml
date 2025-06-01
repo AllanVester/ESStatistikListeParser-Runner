@@ -3,10 +3,6 @@ name: Runner
 on:
   workflow_dispatch:
     inputs:
-      filename:
-        description: 'ESStatistikListeModtag Filename'
-        required: true
-        type: string
       filename-no-suffix:
         description: 'ESStatistikListeModtag Filename (No Suffix)'
         required: true
@@ -19,6 +15,18 @@ on:
         description: 'GitHub Upload Limit (In MiB)'
         required: true
         type: string
+      worker-count:
+        description: 'MySQL - Worker Count'
+        required: true
+        type: string
+      start-count:
+        description: 'MySQL - Start Count'
+        required: true
+        type: string
+      step-count:
+        description: 'MySQL - Step Count'
+        required: true
+        type: string
 
 jobs:
   download-esstatistiklistemodtag-zip-file:
@@ -28,6 +36,18 @@ jobs:
       run:
         working-directory: ${{ github.workspace }}/temp/
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -196,6 +216,18 @@ jobs:
     needs: download-esstatistiklistemodtag-zip-file
     runs-on: ubuntu-latest
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -227,7 +259,7 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
-      - name: Stitch files back together
+      - name: Stitch ESStatistikListeModtag back together
         run: |
           cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
@@ -252,6 +284,18 @@ jobs:
     needs: download-esstatistiklistemodtag-zip-file
     runs-on: ubuntu-latest
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -281,7 +325,7 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
-      - name: Stitch files back together
+      - name: Stitch ESStatistikListeModtag back together
         run: |
           cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
@@ -318,6 +362,18 @@ jobs:
     needs: check-rows
     runs-on: ubuntu-latest
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -368,7 +424,7 @@ jobs:
             db.createCollection('dmr');
           EOF
 
-      - name: Stitch files back together
+      - name: Stitch ESStatistikListeModtag back together
         run: |
           cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
@@ -479,6 +535,24 @@ jobs:
     needs: check-rows
     runs-on: ubuntu-latest
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+
+      - name: Set environment variables
+        run: |
+          echo "NEXT_START_COUNT=$(( ${{ github.event.inputs['start-count'] }} + ${{ github.event.inputs['step-count'] }} ))" >> $GITHUB_ENV
+          echo "NEXT_STEP_COUNT=$(( ${{ github.event.inputs['step-count'] }} - 500000 ))" >> $GITHUB_ENV
+          echo "XML_PARSE_COMPLETE=false" >> $GITHUB_ENV
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -528,7 +602,7 @@ jobs:
         run: |
           /usr/bin/mariadb -e "SET GLOBAL innodb_buffer_pool_size = 14 * 1024 * 1024 * 1024;"
 
-      - name: Stitch files back together
+      - name: Stitch ESStatistikListeModtag back together
         run: |
           cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
@@ -546,7 +620,7 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
-      - name: Set up Git
+      - name: Set up Git for temporary files
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           gh auth login --with-token <<< "${{ secrets.PAT }}"
@@ -555,21 +629,21 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
           
-          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-mysql; then
-              echo "Branch '${{ inputs.filename-no-suffix }}.zip-mysql' already exists, deleting and recreating..."
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-mysql-temp-0; then
+              echo "Branch '${{ inputs.filename-no-suffix }}.zip-mysql-temp-0' already exists, deleting and recreating..."
               
-              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-mysql; then
-                  git branch -D ${{ inputs.filename-no-suffix }}.zip-mysql
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-mysql-temp-0; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-mysql-temp-0
               fi
-              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-mysql
-              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-mysql-temp-0
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql-temp-0
           else
-              echo "Branch '${{ inputs.filename-no-suffix }}.zip-mysql' does not exist, creating..."
+              echo "Branch '${{ inputs.filename-no-suffix }}.zip-mysql-temp-0' does not exist, creating..."
               
-              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql-temp-0
           fi
 
-          git push -u origin ${{ inputs.filename-no-suffix }}.zip-mysql
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-mysql-temp-0
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -586,56 +660,62 @@ jobs:
 
           rm -f "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
         env:
-          NUMBER_OF_WORKERS: 32  
+          NUMBER_OF_WORKERS: ${{ inputs.worker-count }}
+          START_COUNT: ${{ inputs.start-count }}
+          END_COUNT: ${{ env.NEXT_START_COUNT }}
 
       - name: Dump the entire database
         run: |
-          /usr/bin/mariadb-dump --databases bilgaden | gzip > ${{ github.workspace }}/bilgaden.sql.gz
+          /usr/bin/mariadb-dump --no-create-db --databases bilgaden | gzip > ${{ github.workspace }}/bilgaden.sql.gz
     
-      - name: Archive SQL file
+      - name: Split SQL file into temp-directory
         run: |
-          mkdir -p ${{ github.workspace }}/mysql-zip
-          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mysql-zip/${{ inputs.filename-no-suffix }}.sql.gz.zip ${{ github.workspace }}/bilgaden.sql.gz
+          split -d -b ${{ inputs.github-upload-limit }}m ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/${{ inputs.filename-no-suffix }}.sql.gz.part
 
-      - name: Split SQL file
-        run: |
-          mkdir -p ${{ github.workspace }}/mysql-split
-          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/mysql-split/${{ inputs.filename-no-suffix }}.sql.gz.part
-
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install Python dependencies
-        run: |
-          pip install pymongo discord-webhook
-
-      - name: Upload SQL file to GitHub MySQL-branch
+      - name: Upload SQL file to GitHub MySQL-temp-branch
         working-directory: "${{ github.workspace }}/temp/"
         run: |
-          mv ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/bilgaden.sql.gz
-          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
-          
-          python ${{ github.workspace }}/temp/Branch-GitHub.py mysql
-        env:
-          FILENAME: "bilgaden.sql.gz"
-          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
-          FILEPATH: "${{ github.workspace }}/temp/"
-          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mysql"
-          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+          git add --sparse .
+          git commit -m "Uploaded mysql-temp-0"
+          git push
 
-      - name: Upload SQL file to Discord
-        run: |
-          python ${{ github.workspace }}/UploadToDiscord-GitHub.py mysql
-        env:
-          FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"
+      - name: Trigger next run
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'runner-mysql.yml',
+              ref: 'main',
+              inputs: {
+                'filename-no-suffix': '${{ inputs.filename-no-suffix }}',
+                'discord-upload-limit': '${{ inputs.discord-upload-limit }}',
+                'github-upload-limit': '${{ inputs.github-upload-limit }}',
+                'start-count': '${{ env.NEXT_START_COUNT }}',
+                'step-count': '${{ env.NEXT_STEP_COUNT }}',
+                'runner-number': '1'
+              }
+            })
+          github-token: ${{ secrets.PAT }}
 
   kidvin:
     name: Run KidVin
     needs: check-rows
     runs-on: ubuntu-latest
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -669,7 +749,7 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
-      - name: Stitch files back together
+      - name: Stitch ESStatistikListeModtag back together
         run: |
           cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
@@ -769,6 +849,18 @@ jobs:
     needs: check-rows
     runs-on: ubuntu-latest
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -802,7 +894,7 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
-      - name: Stitch files back together
+      - name: Stitch ESStatistikListeModtag back together
         run: |
           cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
@@ -902,6 +994,18 @@ jobs:
     needs: check-rows
     runs-on: ubuntu-latest
     steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
       - name: Maximize build space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -935,7 +1039,7 @@ jobs:
           sparse-checkout-cone-mode: false
           token: "${{ secrets.PAT }}"
 
-      - name: Stitch files back together
+      - name: Stitch ESStatistikListeModtag back together
         run: |
           cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
           file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
