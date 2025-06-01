@@ -194,12 +194,12 @@ jobs:
         run: |
           /usr/bin/mariadb-dump --no-create-db --databases bilgaden | gzip > ${{ github.workspace }}/bilgaden.sql.gz
     
-      - name: Split SQL file into temp-directory
+      - name: Split SQL-file into temp-directory
         if: ${{ env.XML_PARSE_COMPLETE == 'false' }}
         run: |
           split -d -b ${{ inputs.github-upload-limit }}m ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/${{ inputs.filename-no-suffix }}.sql.gz.part
 
-      - name: Upload SQL file to GitHub MySQL-temp-branch
+      - name: Upload SQL-file to GitHub MySQL-temp-branch
         if: ${{ env.XML_PARSE_COMPLETE == 'false' }}
         working-directory: "${{ github.workspace }}/temp/"
         run: |
@@ -207,7 +207,7 @@ jobs:
           git commit -m "Uploaded mysql-temp-${{ inputs.runner-number }}"
           git push
 
-      - name: Trigger next run
+      - name: Trigger next Runner
         if: ${{ env.XML_PARSE_COMPLETE == 'false' }}
         uses: actions/github-script@v6
         with:
@@ -285,13 +285,13 @@ jobs:
 
           git push -u origin ${{ inputs.filename-no-suffix }}.zip-mysql
 
-      - name: Archive SQL file
+      - name: Archive SQL-file
         if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
         run: |
           mkdir -p ${{ github.workspace }}/mysql-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mysql-zip/${{ inputs.filename-no-suffix }}.sql.gz.zip ${{ github.workspace }}/bilgaden.sql.gz
 
-      - name: Split SQL file
+      - name: Split SQL-file
         if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
         run: |
           mkdir -p ${{ github.workspace }}/mysql-split
@@ -308,7 +308,7 @@ jobs:
         run: |
           pip install pymongo discord-webhook
 
-      - name: Upload SQL file to GitHub MySQL-branch
+      - name: Upload SQL-file to GitHub MySQL-branch
         if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
         working-directory: "${{ github.workspace }}/temp/"
         run: |
@@ -323,7 +323,7 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mysql"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload SQL file to Discord
+      - name: Upload SQL-file to Discord
         if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mysql
