@@ -1,0 +1,344 @@
+name: Runner (MySQL)
+
+on:
+  workflow_dispatch:
+    inputs:
+      filename-no-suffix:
+        description: 'ESStatistikListeModtag Filename (No Suffix)'
+        required: true
+        type: string
+      discord-upload-limit:
+        description: 'Discord Upload Limit (In MiB)'
+        required: true
+        type: string
+      github-upload-limit:
+        description: 'GitHub Upload Limit (In MiB)'
+        required: true
+        type: string
+      worker-count:
+        description: 'MySQL - Worker Count'
+        required: true
+        type: string
+      start-count:
+        description: 'MySQL - Start Count'
+        required: true
+        type: string
+      step-count:
+        description: 'MySQL - Step Count'
+        required: true
+        type: string
+      runner-number:
+        description: 'MySQL - Runner Number State'
+        required: true
+        type: string
+
+jobs:
+  mysql:
+    name: Run MySQL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+
+      - name: Set environment variables
+        run: |
+          echo "PREV_RUNNER=$(( ${{ inputs.runner-number }} - 1 ))" >> $GITHUB_ENV
+          echo "NEXT_RUNNER=$(( ${{ inputs.runner-number }} + 1 ))" >> $GITHUB_ENV
+          echo "NEXT_START_COUNT=$(( ${{ inputs.start-count }} + ${{ inputs.step-count }} ))" >> $GITHUB_ENV
+          echo "NEXT_STEP_COUNT=$(( ${{ inputs.step-count }} - 500000 ))" >> $GITHUB_ENV
+          echo "XML_PARSE_COMPLETE=false" >> $GITHUB_ENV
+          
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          remove-cached-tools: "true"
+          remove-swapfile: "true"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/ESStatistikListeParser-GitHub"
+          ref: "main"
+          path: "${{ github.workspace }}/"
+          sparse-checkout: |
+            /Bilgaden.sql
+            /Branch-GitHub.py
+            /go.mod
+            /go.sum
+            /MySQL-GitHub.go
+            /UploadToDiscord-GitHub.py
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Checkout ESStatistikListeModtag repository
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "main"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up MySQL
+        uses: ankane/setup-mariadb@v1
+        
+      - name: Import schema into MySQL
+        run: |
+          /usr/bin/mariadb < "Bilgaden.sql"
+
+      - name: Tune MySQL buffer pool size
+        run: |
+          /usr/bin/mariadb -e "SET GLOBAL innodb_buffer_pool_size = 14 * 1024 * 1024 * 1024;"
+
+      - name: Stitch ESStatistikListeModtag back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (MySQL-temp-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "mysql-temp-${{ env.PREV_RUNNER }}"
+          path: "${{ github.workspace }}/temp/"
+          token: "${{ secrets.PAT }}"
+
+      - name: Stitch SQL back together
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          cat ${{ github.workspace }}/temp/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.sql.gz"
+          file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.sql.gz"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Import SQL into MySQL
+        run: |
+          gunzip -c "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.sql.gz" | /usr/bin/mariadb
+          
+          rm -f "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.sql.gz"
+
+      - name: Checkout ESStatistikListeModtag repository (MySQL-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "mysql"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            !/*
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up Git for temporary files
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          gh auth login --with-token <<< "${{ secrets.PAT }}"
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 104857600
+          
+          if git ls-remote --exit-code --heads origin mysql-temp-${{ inputs.runner-number }}; then
+              echo "Branch 'mysql-temp-${{ inputs.runner-number }}' already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/mysql-temp-${{ inputs.runner-number }}; then
+                  git branch -D mysql-temp-${{ inputs.runner-number }}
+              fi
+              git push origin --delete mysql-temp-${{ inputs.runner-number }}
+              git checkout -b mysql-temp-${{ inputs.runner-number }}
+          else
+              echo "Branch 'mysql-temp-${{ inputs.runner-number }}' does not exist, creating..."
+              
+              git checkout -b mysql-temp-${{ inputs.runner-number }}
+          fi
+
+          git push -u origin mysql-temp-${{ inputs.runner-number }}
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+
+      - name: Install Go dependencies
+        run: |
+          go mod tidy
+
+      - name: Run MySQL Go script
+        run: |
+          go run ${{ github.workspace }}/MySQL-GitHub.go
+
+          rm -f "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+        env:
+          NUMBER_OF_WORKERS: ${{ inputs.worker-count }}
+          START_COUNT: ${{ inputs.start-count }}
+          END_COUNT: ${{ env.NEXT_START_COUNT }}
+
+      - name: Dump the entire database
+        run: |
+          /usr/bin/mariadb-dump --no-create-db --databases bilgaden | gzip > ${{ github.workspace }}/bilgaden.sql.gz
+    
+      - name: Split SQL file into temp-directory
+        if: ${{ env.XML_PARSE_COMPLETE == 'false' }}
+        run: |
+          split -d -b ${{ inputs.github-upload-limit }}m ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/${{ inputs.filename-no-suffix }}.sql.gz.part
+
+      - name: Upload SQL file to GitHub MySQL-temp-branch
+        if: ${{ env.XML_PARSE_COMPLETE == 'false' }}
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          git add --sparse .
+          git commit -m "Uploaded mysql-temp-${{ inputs.runner-number }}"
+          git push
+
+      - name: Trigger next run
+        if: ${{ env.XML_PARSE_COMPLETE == 'false' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'runner-mysql.yml',
+              ref: 'main',
+              inputs: {
+                'filename-no-suffix': '${{ inputs.filename-no-suffix }}',
+                'discord-upload-limit': '${{ inputs.discord-upload-limit }}',
+                'github-upload-limit': '${{ inputs.github-upload-limit }}',
+                'worker-count': '${{ inputs.worker-count }}',
+                'start-count': '${{ env.NEXT_START_COUNT }}',
+                'step-count': '${{ env.NEXT_STEP_COUNT }}',
+                'runner-number': '${{ env.NEXT_RUNNER }}'
+              }
+            })
+          github-token: ${{ secrets.PAT }}
+
+      - name: Delete previous GitHub MySQL-temp-branch
+        if: ${{ env.XML_PARSE_COMPLETE == 'false' }}
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          if git ls-remote --exit-code --heads origin mysql-temp-${{ env.PREV_RUNNER }}; then
+              echo "Branch 'mysql-temp-${{ env.PREV_RUNNER }}' exists. Deleting..."
+              
+              if git show-ref --verify --quiet refs/heads/mysql-temp-${{ env.PREV_RUNNER }}; then
+                  git branch -D mysql-temp-${{ env.PREV_RUNNER }}
+              fi
+              git push origin --delete mysql-temp-${{ env.PREV_RUNNER }}
+          fi
+
+      - name: Remove temp-directory
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        run: |
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (MySQL-branch)
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "mysql"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            !/*
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up Git
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          gh auth login --with-token <<< "${{ secrets.PAT }}"
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 104857600
+          
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-mysql; then
+              echo "Branch '${{ inputs.filename-no-suffix }}.zip-mysql' already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-mysql; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-mysql
+              fi
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-mysql
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql
+          else
+              echo "Branch '${{ inputs.filename-no-suffix }}.zip-mysql' does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-mysql
+          fi
+
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-mysql
+
+      - name: Archive SQL file
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        run: |
+          mkdir -p ${{ github.workspace }}/mysql-zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mysql-zip/${{ inputs.filename-no-suffix }}.sql.gz.zip ${{ github.workspace }}/bilgaden.sql.gz
+
+      - name: Split SQL file
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        run: |
+          mkdir -p ${{ github.workspace }}/mysql-split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/mysql-split/${{ inputs.filename-no-suffix }}.sql.gz.part
+
+      - name: Install Python
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        run: |
+          pip install pymongo discord-webhook
+
+      - name: Upload SQL file to GitHub MySQL-branch
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          mv ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/bilgaden.sql.gz
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py mysql
+        env:
+          FILENAME: "bilgaden.sql.gz"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mysql"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+
+      - name: Upload SQL file to Discord
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        run: |
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py mysql
+        env:
+          FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"
+
+      - name: Delete this GitHub MySQL-temp-branch
+        if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          if git ls-remote --exit-code --heads origin mysql-temp-${{ inputs.runner-number }}; then
+              echo "Branch 'mysql-temp-${{ inputs.runner-number }}' exists. Deleting..."
+              
+              if git show-ref --verify --quiet refs/heads/mysql-temp-${{ inputs.runner-number }}; then
+                  git branch -D mysql-temp-${{ inputs.runner-number }}
+              fi
+              git push origin --delete mysql-temp-${{ inputs.runner-number }}
+          fi
