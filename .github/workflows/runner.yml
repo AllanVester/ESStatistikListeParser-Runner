@@ -549,8 +549,8 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "NEXT_START_COUNT=$(( ${{ github.event.inputs['start-count'] }} + ${{ github.event.inputs['step-count'] }} ))" >> $GITHUB_ENV
-          echo "NEXT_STEP_COUNT=$(( ${{ github.event.inputs['step-count'] }} - 500000 ))" >> $GITHUB_ENV
+          echo "NEXT_START_COUNT=$(( ${{ inputs.start-count }} + ${{ inputs.step-count }} ))" >> $GITHUB_ENV
+          echo "NEXT_STEP_COUNT=$(( ${{ inputs.step-count }} - 500000 ))" >> $GITHUB_ENV
           echo "XML_PARSE_COMPLETE=false" >> $GITHUB_ENV
           
       - name: Maximize build space
