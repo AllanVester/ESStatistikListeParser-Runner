@@ -69,7 +69,7 @@ jobs:
           token: "${{ secrets.PAT }}"
 
       - name: Create ESStatistikListeModtag repository and set workflow permissions
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const repoName = `${{ inputs.filename-no-suffix }}`;
@@ -683,7 +683,7 @@ jobs:
           git push
 
       - name: Trigger next Runner
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
