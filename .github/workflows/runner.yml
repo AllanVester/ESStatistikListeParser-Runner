@@ -27,6 +27,10 @@ on:
         description: 'MySQL - Step Count'
         required: true
         type: string
+      runner-number:
+        description: 'MySQL - Runner Number State'
+        required: true
+        type: string
 
 jobs:
   download-esstatistiklistemodtag-zip-file:
@@ -549,6 +553,8 @@ jobs:
 
       - name: Set environment variables
         run: |
+          echo "PREV_RUNNER=$(( ${{ inputs.runner-number }} - 1 ))" >> $GITHUB_ENV
+          echo "NEXT_RUNNER=$(( ${{ inputs.runner-number }} + 1 ))" >> $GITHUB_ENV
           echo "NEXT_START_COUNT=$(( ${{ inputs.start-count }} + ${{ inputs.step-count }} ))" >> $GITHUB_ENV
           echo "NEXT_STEP_COUNT=$(( ${{ inputs.step-count }} - 500000 ))" >> $GITHUB_ENV
           echo "XML_PARSE_COMPLETE=false" >> $GITHUB_ENV
@@ -629,21 +635,21 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
           
-          if git ls-remote --exit-code --heads origin mysql-temp-0; then
-              echo "Branch 'mysql-temp-0' already exists, deleting and recreating..."
+          if git ls-remote --exit-code --heads origin mysql-temp-${{ inputs.runner-number }}; then
+              echo "Branch 'mysql-temp-${{ inputs.runner-number }}' already exists, deleting and recreating..."
               
-              if git show-ref --verify --quiet refs/heads/mysql-temp-0; then
-                  git branch -D mysql-temp-0
+              if git show-ref --verify --quiet refs/heads/mysql-temp-${{ inputs.runner-number }}; then
+                  git branch -D mysql-temp-${{ inputs.runner-number }}
               fi
-              git push origin --delete mysql-temp-0
-              git checkout -b mysql-temp-0
+              git push origin --delete mysql-temp-${{ inputs.runner-number }}
+              git checkout -b mysql-temp-${{ inputs.runner-number }}
           else
-              echo "Branch 'mysql-temp-0' does not exist, creating..."
+              echo "Branch 'mysql-temp-${{ inputs.runner-number }}' does not exist, creating..."
               
-              git checkout -b mysql-temp-0
+              git checkout -b mysql-temp-${{ inputs.runner-number }}
           fi
 
-          git push -u origin mysql-temp-0
+          git push -u origin mysql-temp-${{ inputs.runner-number }}
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -676,7 +682,7 @@ jobs:
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           git add --sparse .
-          git commit -m "Uploaded mysql-temp-0"
+          git commit -m "Uploaded mysql-temp-${{ inputs.runner-number }}"
           git push
 
       - name: Trigger next run
