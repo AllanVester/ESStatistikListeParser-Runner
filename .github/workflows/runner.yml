@@ -189,7 +189,7 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Set up ESStatistikListeModtag repository branches for later use
+      - name: Set up ESStatistikListeModtag repository branches
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           git switch --orphan mongodb
@@ -333,12 +333,12 @@ jobs:
           
           rm -rf ${{ github.workspace }}/temp/
 
-      - name: Archive ZIP file
+      - name: Archive ZIP-file
         run: |
           mkdir -p ${{ github.workspace }}/zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/zip/${{ inputs.filename-no-suffix }}.zip ${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip
 
-      - name: Split ZIP file
+      - name: Split ZIP-file
         run: |
           mkdir -p ${{ github.workspace }}/split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip ${{ github.workspace }}/split/${{ inputs.filename-no-suffix }}.zip.part
@@ -352,7 +352,7 @@ jobs:
         run: |
           pip install pymongo discord-webhook
 
-      - name: Upload ZIP file to Discord
+      - name: Upload ZIP-file to Discord
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py normal
         env:
@@ -492,12 +492,12 @@ jobs:
             --gzip --out dump
           find ${{ github.workspace }}/dump/bilgaden -type f ! -name 'dmr.bson.gz' -delete
     
-      - name: Archive BSON file
+      - name: Archive BSON-file
         run: |
           mkdir -p ${{ github.workspace }}/mongodb-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/mongodb-zip/${{ inputs.filename-no-suffix }}.bson.gz.zip ${{ github.workspace }}/dump/bilgaden
 
-      - name: Split BSON file
+      - name: Split BSON-file
         run: |
           mkdir -p ${{ github.workspace }}/mongodb-split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/dump/bilgaden/dmr.bson.gz ${{ github.workspace }}/mongodb-split/${{ inputs.filename-no-suffix }}.bson.gz.part
@@ -511,7 +511,7 @@ jobs:
         run: |
           pip install pymongo discord-webhook
 
-      - name: Upload BSON file to GitHub MongoDB-branch
+      - name: Upload BSON-file to GitHub MongoDB-branch
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           mv ${{ github.workspace }}/dump/bilgaden/dmr.bson.gz ${{ github.workspace }}/temp/dmr.bson.gz
@@ -525,7 +525,7 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-mongodb"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload BSON file to Discord
+      - name: Upload BSON-file to Discord
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py mongodb
         env:
@@ -671,18 +671,18 @@ jobs:
         run: |
           /usr/bin/mariadb-dump --no-create-db --databases bilgaden | gzip > ${{ github.workspace }}/bilgaden.sql.gz
     
-      - name: Split SQL file into temp-directory
+      - name: Split SQL-file into temp-directory
         run: |
           split -d -b ${{ inputs.github-upload-limit }}m ${{ github.workspace }}/bilgaden.sql.gz ${{ github.workspace }}/temp/${{ inputs.filename-no-suffix }}.sql.gz.part
 
-      - name: Upload SQL file to GitHub MySQL-temp-branch
+      - name: Upload SQL-file to GitHub MySQL-temp-branch
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           git add --sparse .
           git commit -m "Uploaded mysql-temp-${{ inputs.runner-number }}"
           git push
 
-      - name: Trigger next run
+      - name: Trigger next Runner
         uses: actions/github-script@v6
         with:
           script: |
@@ -809,12 +809,12 @@ jobs:
         run: |
           go run ${{ github.workspace }}/KidVin-GitHub.go
 
-      - name: Archive JSON file
+      - name: Archive JSON-file
         run: |
           mkdir -p ${{ github.workspace }}/kidvin-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kidvin-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/kidvin.json
 
-      - name: Split JSON file
+      - name: Split JSON-file
         run: |
           mkdir -p ${{ github.workspace }}/kidvin-split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kidvin.json ${{ github.workspace }}/kidvin-split/${{ inputs.filename-no-suffix }}.json.part
@@ -828,7 +828,7 @@ jobs:
         run: |
           pip install pymongo discord-webhook
 
-      - name: Upload JSON file to GitHub KidVin-branch
+      - name: Upload JSON-file to GitHub KidVin-branch
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           mv ${{ github.workspace }}/kidvin.json ${{ github.workspace }}/temp/kidvin.json
@@ -842,7 +842,7 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-kidvin"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload JSON file to Discord
+      - name: Upload JSON-file to Discord
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py kidvin
         env:
@@ -954,12 +954,12 @@ jobs:
         run: |
           go run ${{ github.workspace }}/Kid-GitHub.go
 
-      - name: Archive JSON file
+      - name: Archive JSON-file
         run: |
           mkdir -p ${{ github.workspace }}/kid-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kid-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/kid.json
 
-      - name: Split JSON file
+      - name: Split JSON-file
         run: |
           mkdir -p ${{ github.workspace }}/kid-split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kid.json ${{ github.workspace }}/kid-split/${{ inputs.filename-no-suffix }}.json.part
@@ -973,7 +973,7 @@ jobs:
         run: |
           pip install pymongo discord-webhook
 
-      - name: Upload JSON file to GitHub Kid-branch
+      - name: Upload JSON-file to GitHub Kid-branch
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           mv ${{ github.workspace }}/kid.json ${{ github.workspace }}/temp/kid.json
@@ -987,7 +987,7 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-kid"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload JSON file to Discord
+      - name: Upload JSON-file to Discord
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py kid
         env:
@@ -1099,12 +1099,12 @@ jobs:
         run: |
           go run ${{ github.workspace }}/Vin-GitHub.go
 
-      - name: Archive JSON file
+      - name: Archive JSON-file
         run: |
           mkdir -p ${{ github.workspace }}/vin-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/vin-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/vin.json
 
-      - name: Split JSON file
+      - name: Split JSON-file
         run: |
           mkdir -p ${{ github.workspace }}/vin-split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/vin.json ${{ github.workspace }}/vin-split/${{ inputs.filename-no-suffix }}.json.part
@@ -1118,7 +1118,7 @@ jobs:
         run: |
           pip install pymongo discord-webhook
 
-      - name: Upload JSON file to GitHub Vin-branch
+      - name: Upload JSON-file to GitHub Vin-branch
         working-directory: "${{ github.workspace }}/temp/"
         run: |
           mv ${{ github.workspace }}/vin.json ${{ github.workspace }}/temp/vin.json
@@ -1132,7 +1132,7 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-vin"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload JSON file to Discord
+      - name: Upload JSON-file to Discord
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py vin
         env:
