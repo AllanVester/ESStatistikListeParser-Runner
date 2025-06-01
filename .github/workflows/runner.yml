@@ -692,9 +692,10 @@ jobs:
                 'filename-no-suffix': '${{ inputs.filename-no-suffix }}',
                 'discord-upload-limit': '${{ inputs.discord-upload-limit }}',
                 'github-upload-limit': '${{ inputs.github-upload-limit }}',
+                'worker-count': '${{ inputs.worker-count }}',
                 'start-count': '${{ env.NEXT_START_COUNT }}',
                 'step-count': '${{ env.NEXT_STEP_COUNT }}',
-                'runner-number': '1'
+                'runner-number': '${{ env.NEXT_RUNNER }}'
               }
             })
           github-token: ${{ secrets.PAT }}
