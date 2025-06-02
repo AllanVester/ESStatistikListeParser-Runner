@@ -330,7 +330,7 @@ jobs:
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"
 
-      - name: Delete this GitHub MySQL-temp-branch
+      - name: Delete current GitHub MySQL-temp-branch
         if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
         working-directory: "${{ github.workspace }}/temp/"
         run: |
