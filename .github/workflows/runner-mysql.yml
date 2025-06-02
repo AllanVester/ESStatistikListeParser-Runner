@@ -330,10 +330,19 @@ jobs:
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.sql.gz"
 
-      - name: Delete current GitHub MySQL-temp-branch
+      - name: Delete previous and current GitHub MySQL-temp-branch
         if: ${{ env.XML_PARSE_COMPLETE == 'true' }}
         working-directory: "${{ github.workspace }}/temp/"
         run: |
+          if git ls-remote --exit-code --heads origin mysql-temp-${{ env.PREV_RUNNER }}; then
+              echo "Branch 'mysql-temp-${{ env.PREV_RUNNER }}' exists. Deleting..."
+              
+              if git show-ref --verify --quiet refs/heads/mysql-temp-${{ env.PREV_RUNNER }}; then
+                  git branch -D mysql-temp-${{ env.PREV_RUNNER }}
+              fi
+              git push origin --delete mysql-temp-${{ env.PREV_RUNNER }}
+          fi
+          
           if git ls-remote --exit-code --heads origin mysql-temp-${{ inputs.runner-number }}; then
               echo "Branch 'mysql-temp-${{ inputs.runner-number }}' exists. Deleting..."
               
