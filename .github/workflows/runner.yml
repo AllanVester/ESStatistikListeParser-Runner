@@ -213,7 +213,7 @@ jobs:
           git push origin vin
 
   check-rows:
-    name: Go Row Check
+    name: Check Rows
     needs: download-esstatistiklistemodtag-zip-file
     runs-on: ubuntu-latest
     steps:
@@ -276,7 +276,7 @@ jobs:
         run: |
           go mod tidy
 
-      - name: Run Check-Rows Go script
+      - name: Run CheckRows Go script
         run: |
           go run ${{ github.workspace }}/CheckRows-GitHub.go
 
