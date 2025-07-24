@@ -3,6 +3,10 @@ name: Runner
 on:
   workflow_dispatch:
     inputs:
+      previous-filename-no-suffix:
+        description: 'Previous ESStatistikListeModtag Filename (No Suffix)'
+        required: true
+        type: string
       filename-no-suffix:
         description: 'ESStatistikListeModtag Filename (No Suffix)'
         required: true
