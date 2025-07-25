@@ -216,6 +216,18 @@ jobs:
           git commit --allow-empty -m "Created Vin branch"
           git push origin vin
 
+          git switch --orphan newkidvin
+          git commit --allow-empty -m "Created NewKidVin branch"
+          git push origin newkidvin
+          
+          git switch --orphan newkid
+          git commit --allow-empty -m "Created NewKid branch"
+          git push origin newkid
+
+          git switch --orphan newvin
+          git commit --allow-empty -m "Created NewVin branch"
+          git push origin newvin
+
   check-rows:
     name: Check Rows
     needs: download-esstatistiklistemodtag-zip-file
