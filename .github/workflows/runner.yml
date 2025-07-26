@@ -1008,6 +1008,24 @@ jobs:
           
           rm -rf ${{ github.workspace }}/temp/
 
+      - name: Checkout previous ESStatistikListeModtag repository (Kid-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.previous-filename-no-suffix }}"
+          ref: "kid"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Stitch previous Kid-files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/previouskid.json"
+          file "${{ github.workspace }}/previouskid.json"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
       - name: Checkout ESStatistikListeModtag repository (Kid-branch)
         uses: actions/checkout@v4
         with:
@@ -1020,14 +1038,17 @@ jobs:
           token: "${{ secrets.PAT }}"
 
       - name: Set up Git
-        working-directory: "${{ github.workspace }}/temp/"
+        working-directory: "${{ github.workspace }}/"
         run: |
           gh auth login --with-token <<< "${{ secrets.PAT }}"
 
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
-          
+
+      - name: Set up Git for Kid-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
           if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-kid; then
               echo "Branch already exists, deleting and recreating..."
               
@@ -1057,16 +1078,26 @@ jobs:
         run: |
           go run ${{ github.workspace }}/Kid-GitHub.go
 
-      - name: Archive JSON-file
+      - name: Archive JSON-file (Kid)
         run: |
           mkdir -p ${{ github.workspace }}/kid-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kid-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/kid.json
 
-      - name: Split JSON-file
+      - name: Archive JSON-file (NewKid)
+        run: |
+          mkdir -p ${{ github.workspace }}/newkid-zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/newkid-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/newkid.json
+
+      - name: Split JSON-file (Kid)
         run: |
           mkdir -p ${{ github.workspace }}/kid-split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kid.json ${{ github.workspace }}/kid-split/${{ inputs.filename-no-suffix }}.json.part
-
+          
+      - name: Split JSON-file (NewKid)
+        run: |
+          mkdir -p ${{ github.workspace }}/newkid-split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/newkid.json ${{ github.workspace }}/newkid-split/${{ inputs.filename-no-suffix }}.json.part
+          
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -1090,9 +1121,65 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-kid"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload JSON-file to Discord
+      - name: Upload JSON-file to Discord Kid
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py kid
+        env:
+          FILENAME: "${{ inputs.filename-no-suffix }}.json"
+
+      - name: Remove temp-directory
+        run: |
+          mv ${{ github.workspace }}/temp/Branch-GitHub.py ${{ github.workspace }}/Branch-GitHub.py
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (NewKid-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "newkid"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up Git for NewKid-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-newkid; then
+              echo "Branch already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-newkid; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-newkid
+              fi
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-newkid
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-newkid
+          else
+              echo "Branch does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-newkid
+          fi
+
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-newkid
+
+      - name: Upload JSON-file to GitHub NewKid-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          mv ${{ github.workspace }}/newkid.json ${{ github.workspace }}/temp/newkid.json
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py newkid
+        env:
+          FILENAME: "newkid.json"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-newkid"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+
+      - name: Upload JSON-file to Discord NewKid
+        run: |
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py newkid
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.json"
 
@@ -1153,6 +1240,24 @@ jobs:
           
           rm -rf ${{ github.workspace }}/temp/
 
+      - name: Checkout previous ESStatistikListeModtag repository (Vin-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.previous-filename-no-suffix }}"
+          ref: "vin"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Stitch previous Vin-files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/previousvin.json"
+          file "${{ github.workspace }}/previousvin.json"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
       - name: Checkout ESStatistikListeModtag repository (Vin-branch)
         uses: actions/checkout@v4
         with:
@@ -1165,14 +1270,17 @@ jobs:
           token: "${{ secrets.PAT }}"
 
       - name: Set up Git
-        working-directory: "${{ github.workspace }}/temp/"
+        working-directory: "${{ github.workspace }}/"
         run: |
           gh auth login --with-token <<< "${{ secrets.PAT }}"
 
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
-          
+
+      - name: Set up Git for Vin-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
           if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-vin; then
               echo "Branch already exists, deleting and recreating..."
               
@@ -1202,15 +1310,25 @@ jobs:
         run: |
           go run ${{ github.workspace }}/Vin-GitHub.go
 
-      - name: Archive JSON-file
+      - name: Archive JSON-file (Vin)
         run: |
           mkdir -p ${{ github.workspace }}/vin-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/vin-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/vin.json
 
-      - name: Split JSON-file
+      - name: Archive JSON-file (NewVin)
+        run: |
+          mkdir -p ${{ github.workspace }}/newvin-zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/newvin-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/newvin.json
+
+      - name: Split JSON-file (Vin)
         run: |
           mkdir -p ${{ github.workspace }}/vin-split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/vin.json ${{ github.workspace }}/vin-split/${{ inputs.filename-no-suffix }}.json.part
+          
+      - name: Split JSON-file (NewVin)
+        run: |
+          mkdir -p ${{ github.workspace }}/newvin-split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/newvin.json ${{ github.workspace }}/newvin-split/${{ inputs.filename-no-suffix }}.json.part
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -1235,8 +1353,64 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-vin"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload JSON-file to Discord
+      - name: Upload JSON-file to Discord Vin
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py vin
+        env:
+          FILENAME: "${{ inputs.filename-no-suffix }}.json"
+
+      - name: Remove temp-directory
+        run: |
+          mv ${{ github.workspace }}/temp/Branch-GitHub.py ${{ github.workspace }}/Branch-GitHub.py
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (NewVin-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "newvin"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up Git for NewVin-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-newvin; then
+              echo "Branch already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-newvin; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-newvin
+              fi
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-newvin
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-newvin
+          else
+              echo "Branch does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-newvin
+          fi
+
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-newvin
+
+      - name: Upload JSON-file to GitHub NewVin-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          mv ${{ github.workspace }}/newvin.json ${{ github.workspace }}/temp/newvin.json
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py newvin
+        env:
+          FILENAME: "newvin.json"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-newvin"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+
+      - name: Upload JSON-file to Discord NewVin
+        run: |
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py newvin
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.json"
