@@ -776,6 +776,24 @@ jobs:
           
           rm -rf ${{ github.workspace }}/temp/
 
+      - name: Checkout previous ESStatistikListeModtag repository (KidVin-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.previous-filename-no-suffix }}"
+          ref: "kidvin"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Stitch previous KidVin-files back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/previouskidvin.json"
+          file "${{ github.workspace }}/previouskidvin.json"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
       - name: Checkout ESStatistikListeModtag repository (KidVin-branch)
         uses: actions/checkout@v4
         with:
@@ -788,14 +806,17 @@ jobs:
           token: "${{ secrets.PAT }}"
 
       - name: Set up Git
-        working-directory: "${{ github.workspace }}/temp/"
+        working-directory: "${{ github.workspace }}/"
         run: |
           gh auth login --with-token <<< "${{ secrets.PAT }}"
 
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global http.postBuffer 104857600
-          
+
+      - name: Set up Git for KidVin-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
           if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-kidvin; then
               echo "Branch already exists, deleting and recreating..."
               
@@ -825,15 +846,25 @@ jobs:
         run: |
           go run ${{ github.workspace }}/KidVin-GitHub.go
 
-      - name: Archive JSON-file
+      - name: Archive JSON-file (KidVin)
         run: |
           mkdir -p ${{ github.workspace }}/kidvin-zip
           zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kidvin-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/kidvin.json
 
-      - name: Split JSON-file
+      - name: Archive JSON-file (NewKidVin)
+        run: |
+          mkdir -p ${{ github.workspace }}/newkidvin-zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/newkidvin-zip/${{ inputs.filename-no-suffix }}.json.zip ${{ github.workspace }}/newkidvin.json
+
+      - name: Split JSON-file (KidVin)
         run: |
           mkdir -p ${{ github.workspace }}/kidvin-split
           split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/kidvin.json ${{ github.workspace }}/kidvin-split/${{ inputs.filename-no-suffix }}.json.part
+          
+      - name: Split JSON-file (NewKidVin)
+        run: |
+          mkdir -p ${{ github.workspace }}/newkidvin-split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/newkidvin.json ${{ github.workspace }}/newkidvin-split/${{ inputs.filename-no-suffix }}.json.part
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -858,9 +889,65 @@ jobs:
           BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-kidvin"
           GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
 
-      - name: Upload JSON-file to Discord
+      - name: Upload JSON-file to Discord KidVin
         run: |
           python ${{ github.workspace }}/UploadToDiscord-GitHub.py kidvin
+        env:
+          FILENAME: "${{ inputs.filename-no-suffix }}.json"
+
+      - name: Remove temp-directory
+        run: |
+          mv ${{ github.workspace }}/temp/Branch-GitHub.py ${{ github.workspace }}/Branch-GitHub.py
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (NewKidVin-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "newkidvin"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up Git for NewKidVin-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-newkidvin; then
+              echo "Branch already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-newkidvin; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-newkidvin
+              fi
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-newkidvin
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-newkidvin
+          else
+              echo "Branch does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-newkidvin
+          fi
+
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-newkidvin
+
+      - name: Upload JSON-file to GitHub NewKidVin-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          mv ${{ github.workspace }}/newkidvin.json ${{ github.workspace }}/temp/newkidvin.json
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py newkidvin
+        env:
+          FILENAME: "newkidvin.json"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-newkidvin"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+
+      - name: Upload JSON-file to Discord NewKidVin
+        run: |
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py newkidvin
         env:
           FILENAME: "${{ inputs.filename-no-suffix }}.json"
 
