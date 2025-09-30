@@ -204,6 +204,10 @@ jobs:
           git commit --allow-empty -m "Created MySQL branch"
           git push origin mysql
 
+          git switch --orphan postgresql
+          git commit --allow-empty -m "Created PostgreSQL branch"
+          git push origin postgresql
+
           git switch --orphan kidvin
           git commit --allow-empty -m "Created KidVin branch"
           git push origin kidvin
