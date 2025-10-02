@@ -232,6 +232,10 @@ jobs:
           git commit --allow-empty -m "Created NewVin branch"
           git push origin newvin
 
+          git switch --orphan empty
+          git commit --allow-empty -m "Created empty branch"
+          git push origin empty
+
   check-rows:
     name: Check Rows
     needs: download-esstatistiklistemodtag-zip-file
