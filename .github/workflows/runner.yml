@@ -727,6 +727,173 @@ jobs:
             })
           github-token: ${{ secrets.PAT }}
 
+  postgresql:
+    name: Run PostgreSQL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display runner information
+        run: |
+          echo "cpu-core:       $(nproc --all)"
+          echo "cpu-model:      $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')"
+          echo "hostname:       $(hostname)"
+          echo "kernel-release: $(uname -r)"
+          echo "kernel-version: $(uname -v)"
+          echo "name:           $(grep '^NAME=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "platform:       $(uname -s)"
+          echo "release:        $(grep '^VERSION_ID=' /etc/os-release | head -1 | cut -d= -f2- | tr -d '\"')"
+          echo "total-memory:   $(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}')"
+          
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          remove-cached-tools: "true"
+          remove-swapfile: "true"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/ESStatistikListeParser-GitHub"
+          ref: "main"
+          path: "${{ github.workspace }}/"
+          sparse-checkout: |
+            /Bilgaden-PostgreSQL.sql
+            /Branch-GitHub.py
+            /go.mod
+            /go.sum
+            /PostgreSQL-GitHub.go
+            /UploadToDiscord-GitHub.py
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Checkout ESStatistikListeModtag repository
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "main"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            /ESStatistikListeModtag
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: 18
+          database: runner
+        
+      - name: Import schema into PostgreSQL
+        run: |
+          psql -q -f Bilgaden-PostgreSQL.sql
+
+      - name: Stitch ESStatistikListeModtag back together
+        run: |
+          cat ${{ github.workspace }}/temp/ESStatistikListeModtag/*.part* > "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          file "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+          
+          rm -rf ${{ github.workspace }}/temp/
+
+      - name: Checkout ESStatistikListeModtag repository (PostgreSQL-branch)
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/${{ inputs.filename-no-suffix }}"
+          ref: "postgresql"
+          path: "${{ github.workspace }}/temp/"
+          sparse-checkout: |
+            !/*
+          sparse-checkout-cone-mode: false
+          token: "${{ secrets.PAT }}"
+
+      - name: Set up Git
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          gh auth login --with-token <<< "${{ secrets.PAT }}"
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 104857600
+          
+          if git ls-remote --exit-code --heads origin ${{ inputs.filename-no-suffix }}.zip-postgresql; then
+              echo "Branch '${{ inputs.filename-no-suffix }}.zip-postgresql' already exists, deleting and recreating..."
+              
+              if git show-ref --verify --quiet refs/heads/${{ inputs.filename-no-suffix }}.zip-postgresql; then
+                  git branch -D ${{ inputs.filename-no-suffix }}.zip-postgresql
+              fi
+              git push origin --delete ${{ inputs.filename-no-suffix }}.zip-postgresql
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-postgresql
+          else
+              echo "Branch '${{ inputs.filename-no-suffix }}.zip-postgresql' does not exist, creating..."
+              
+              git checkout -b ${{ inputs.filename-no-suffix }}.zip-postgresql
+          fi
+
+          git push -u origin ${{ inputs.filename-no-suffix }}.zip-postgresql
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+
+      - name: Install Go dependencies
+        run: |
+          go mod tidy
+
+      - name: Run PostgreSQL Go script
+        run: |
+          go run ${{ github.workspace }}/PostgreSQL-GitHub.go
+
+          rm -f "${{ github.workspace }}/${{ inputs.filename-no-suffix }}.zip"
+
+      - name: Dump the entire database
+        run: |
+          pg_dump --compress=gzip:9 --no-owner --no-privileges -Fc -d bilgaden -f ${{ github.workspace }}/bilgaden.dump.gz
+
+          dropdb --force bilgaden
+    
+      - name: Archive SQL-file
+        run: |
+          mkdir -p ${{ github.workspace }}/postgresql-zip
+          zip -j -r -s ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/postgresql-zip/${{ inputs.filename-no-suffix }}.dump.gz.zip ${{ github.workspace }}/bilgaden.dump.gz
+
+      - name: Split SQL-file
+        run: |
+          mkdir -p ${{ github.workspace }}/postgresql-split
+          split -d -b ${{ inputs.discord-upload-limit }}m ${{ github.workspace }}/bilgaden.dump.gz ${{ github.workspace }}/postgresql-split/${{ inputs.filename-no-suffix }}.dump.gz.part
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          pip install pymongo discord-webhook
+
+      - name: Upload SQL-file to GitHub PostgreSQL-branch
+        working-directory: "${{ github.workspace }}/temp/"
+        run: |
+          mv ${{ github.workspace }}/bilgaden.dump.gz ${{ github.workspace }}/temp/bilgaden.dump.gz
+          mv ${{ github.workspace }}/Branch-GitHub.py ${{ github.workspace }}/temp/Branch-GitHub.py
+          
+          python ${{ github.workspace }}/temp/Branch-GitHub.py postgresql
+        env:
+          FILENAME: "bilgaden.dump.gz"
+          FILENAME_NO_SUFFIX: "${{ inputs.filename-no-suffix }}"
+          FILEPATH: "${{ github.workspace }}/temp/"
+          BRANCHNAME: "${{ inputs.filename-no-suffix }}.zip-postgresql"
+          GITHUB_UPLOAD_LIMIT: "${{ inputs.github-upload-limit }}"
+
+      - name: Upload SQL-file to Discord
+        run: |
+          python ${{ github.workspace }}/UploadToDiscord-GitHub.py postgresql
+        env:
+          FILENAME: "${{ inputs.filename-no-suffix }}.dump.gz"
+
   kidvin:
     name: Run KidVin
     needs: check-rows
