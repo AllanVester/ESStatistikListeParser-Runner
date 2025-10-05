@@ -729,6 +729,7 @@ jobs:
 
   postgresql:
     name: Run PostgreSQL
+    needs: check-rows
     runs-on: ubuntu-latest
     steps:
       - name: Display runner information
